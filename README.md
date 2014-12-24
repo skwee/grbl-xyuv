@@ -14,4 +14,7 @@ The following changes to the orginal code where applied:
 It might be difficult to reintegrate the changes into the orginal code, so i did not fork the original project. This is just here for anyone who wants to drive a hotwire foam cutter with grbl.
 The wire runs quite smooth through the foam on my own machine.
 
+To try it out just do a "make" and upload the hexfile to your arduino:
+/usr/bin/avrdude -C/etc/avrdude.conf -pm328p -carduino -P/dev/ttyACM0 -D -Uflash:w:grbl-xyuv.hex
+
 
