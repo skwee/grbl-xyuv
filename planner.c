@@ -492,23 +492,55 @@ void plan_buffer_line(float x, float y, float z, float t, float feed_rate, uint8
   if ((block_buffer_head != block_buffer_tail) && (pl.previous_nominal_speed > 0.0)) {
     // Compute cosine of angle between previous and current path. (prev_unit_vec is negative)
     // NOTE: Max junction velocity is computed without sin() or acos() by trig half angle identity.
-    float cos_theta = - pl.previous_unit_vec[X_AXIS] * unit_vec[X_AXIS]
-                       - pl.previous_unit_vec[Y_AXIS] * unit_vec[Y_AXIS]
-                       - pl.previous_unit_vec[Z_AXIS] * unit_vec[Z_AXIS]
-                      /// 8c1  no T_AXIS
-                        ;
 
-    // Skip and use default max junction speed for 0 degree acute junction.
-    if (cos_theta < 0.95) {
-      vmax_junction = min(pl.previous_nominal_speed,block->nominal_speed);
-      // Skip and avoid divide by zero for straight junctions at 180 degrees. Limit to min() of nominal speeds.
-      if (cos_theta > -0.95) {
-        // Compute maximum junction velocity based on maximum acceleration and junction deviation
-        float sin_theta_d2 = sqrt(0.5*(1.0-cos_theta)); // Trig half angle identity. Always positive.
-        vmax_junction = min(vmax_junction,
-          sqrt(settings.acceleration * settings.junction_deviation * sin_theta_d2/(1.0-sin_theta_d2)) );
+    #ifdef FOAM_CUTTER
+      float cos_theta1 = - pl.previous_unit_vec[X_AXIS] * unit_vec[X_AXIS]
+                         - pl.previous_unit_vec[Y_AXIS] * unit_vec[Y_AXIS];
+
+      float cos_theta2 = - pl.previous_unit_vec[Z_AXIS] * unit_vec[Z_AXIS]
+                         - pl.previous_unit_vec[T_AXIS] * unit_vec[T_AXIS];
+
+      // Skip and use default max junction speed for 0 degree acute junction.
+      if (cos_theta1 < 0.95) {
+        vmax_junction = min(pl.previous_nominal_speed, block->nominal_speed);
+        // Skip and avoid divide by zero for straight junctions at 180 degrees. Limit to min() of nominal speeds.
+        if (cos_theta1 > -0.95) {
+          // Compute maximum junction velocity based on maximum acceleration and junction deviation
+          float sin_theta_d21 = sqrt(0.5*(1.0-cos_theta1)); // Trig half angle identity. Always positive.
+          vmax_junction = min(vmax_junction,
+            sqrt(settings.acceleration * settings.junction_deviation * sin_theta_d21/(1.0-sin_theta_d21)) );
+        }
       }
-    }
+
+      if (cos_theta2 < 0.95) {
+        vmax_junction = min(pl.previous_nominal_speed, block->nominal_speed);
+        // Skip and avoid divide by zero for straight junctions at 180 degrees. Limit to min() of nominal speeds.
+        if (cos_theta2 > -0.95) {
+          // Compute maximum junction velocity based on maximum acceleration and junction deviation
+          float sin_theta_d22 = sqrt(0.5*(1.0-cos_theta2)); // Trig half angle identity. Always positive.
+          vmax_junction = min(vmax_junction,
+            sqrt(settings.acceleration * settings.junction_deviation * sin_theta_d22/(1.0-sin_theta_d22)) );
+        }
+      }      
+    #else // original code
+      float cos_theta = - pl.previous_unit_vec[X_AXIS] * unit_vec[X_AXIS]
+                         - pl.previous_unit_vec[Y_AXIS] * unit_vec[Y_AXIS]
+                         - pl.previous_unit_vec[Z_AXIS] * unit_vec[Z_AXIS]
+                        /// 8c1  no T_AXIS
+                          ;
+
+      // Skip and use default max junction speed for 0 degree acute junction.
+      if (cos_theta < 0.95) {
+        vmax_junction = min(pl.previous_nominal_speed,block->nominal_speed);
+        // Skip and avoid divide by zero for straight junctions at 180 degrees. Limit to min() of nominal speeds.
+        if (cos_theta > -0.95) {
+          // Compute maximum junction velocity based on maximum acceleration and junction deviation
+          float sin_theta_d2 = sqrt(0.5*(1.0-cos_theta)); // Trig half angle identity. Always positive.
+          vmax_junction = min(vmax_junction,
+            sqrt(settings.acceleration * settings.junction_deviation * sin_theta_d2/(1.0-sin_theta_d2)) );
+        }
+      }
+    #endif
   }
   block->max_entry_speed = vmax_junction;
 
