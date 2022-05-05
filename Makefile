@@ -62,7 +62,7 @@ all:	grbl-xyuv.hex
 	$(COMPILE) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:grbl.hex:i
+	$(AVRDUDE) -U flash:w:grbl-xyuv.hex:i
 
 fuse:
 	$(AVRDUDE) $(FUSES)
